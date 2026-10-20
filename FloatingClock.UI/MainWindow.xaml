@@ -81,7 +81,7 @@
 
                 <!-- Left Side Label (Optional title context text next to your icon) -->
                 <TextBlock Grid.Column="1" 
-                           Text="ChronoTask" 
+                           Text="Floating Clock" 
                            Foreground="#FFAAAAAA" 
                            FontSize="11" 
                            FontWeight="SemiBold" 
