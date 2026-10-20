@@ -21,7 +21,15 @@ namespace FloatingClock.UI
             AppHost = Host.CreateDefaultBuilder()
                .ConfigureServices((hostContext, services) =>
                {
-                   string dbPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "floatingclock.db");
+                   string appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                       "FloatingClock");
+
+                   if (!Directory.Exists(appDataFolder))
+                   {
+                       Directory.CreateDirectory(appDataFolder);
+                   }
+
+                   string dbPath = Path.Combine(appDataFolder, "floatingclock.db");
                    services.AddDbContextFactory<FloatingClockDbContext>(options =>
                        options.UseSqlite($"Data Source={dbPath}"));
 
