@@ -6,6 +6,8 @@
         xmlns:local="clr-namespace:FloatingClock.UI"
         mc:Ignorable="d" 
         Title="Floating Clock &amp; Todo" Height="320" Width="300"
+        MaxWidth="300" MaxHeight="500"
+        SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
         Icon="pack://application:,,,/Assets/app.ico">
@@ -122,14 +124,19 @@
                            Foreground="OrangeRed" FontSize="22" FontWeight="Bold" 
                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,8"/>
 
-                <!-- Daily Todo List -->
-                <Border Grid.Row="1" BorderBrush="Red" BorderThickness="1" CornerRadius="6" Padding="4" Background="#11FFFFFF">
-                    <ListBox x:Name="lstTodos" Background="Transparent" 
-                             BorderBrush="Transparent" Foreground="White"
-                             HorizontalAlignment="Stretch"
-                             HorizontalContentAlignment="Stretch">
-                        
-                    </ListBox>
+                <!-- Daily Todo List Container -->
+                <Border Grid.Row="1" BorderBrush="Red" BorderThickness="1" CornerRadius="6" Padding="4" Background="#11FFFFFF" Margin="0,4,0,0">
+                    <!-- The ScrollViewer manages the layout overflow gracefully -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                  HorizontalScrollBarVisibility="Disabled">
+
+                        <ListBox x:Name="lstTodos" Background="Transparent" 
+                                 BorderBrush="Transparent" Foreground="White"
+                                 HorizontalAlignment="Stretch"
+                                 HorizontalContentAlignment="Stretch">
+                        </ListBox>
+
+                    </ScrollViewer>
                 </Border>
             </Grid>
         </Grid>
