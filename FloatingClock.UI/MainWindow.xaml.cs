@@ -32,7 +32,18 @@ public partial class MainWindow : Window
         TimeFormat = GetSystemTimeFormat();
         SetupClockTimer();
 
-        // Wire up the Loaded event to load tasks from SQLite on startup
+
+        this.WindowStartupLocation = WindowStartupLocation.Manual;
+
+        this.MouseLeftButtonUp += Window_MouseLeftButtonUp;
+
+        this.Loaded += (s, e) =>
+        {
+            var desktopWorkingArea = SystemParameters.WorkArea;
+            this.Left = desktopWorkingArea.Right - this.Width - 20;
+            this.Top = desktopWorkingArea.Bottom - this.Height - 20;
+        };
+
         this.Loaded += MainWindow_Loaded;
     }
 
@@ -70,14 +81,71 @@ public partial class MainWindow : Window
         txtClock.Text = DateTime.Now.ToString(TimeFormat);
     }
 
-    // WPF's built-in DragMove makes dragging borderless windows effortless
-    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (e.ButtonState == MouseButtonState.Pressed)
+        if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
         {
-            DragMove();
+            // Allows the window to be dragged freely anywhere without fighting the user
+            this.DragMove();
         }
     }
+
+    private void Window_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // Force WPF to evaluate the exact layout footprint before calculating
+        this.UpdateLayout();
+
+        var desktop = SystemParameters.WorkArea;
+        double snapThreshold = 40; // 🧲 Distance in pixels where screen edges become "magnetic"
+        double screenMargin = 15;  // 📏 Clean breathing room gap from the taskbar/edges
+
+        double targetLeft = this.Left;
+        double targetTop = this.Top;
+
+        // ─── HORIZONTAL SNAPPING MATH (Left vs Right Edges) ───
+        if (this.Left < desktop.Left + snapThreshold)
+        {
+            // Magnetize to Left Edge
+            targetLeft = desktop.Left + screenMargin;
+        }
+        else if (this.Left + this.ActualWidth > desktop.Right - snapThreshold)
+        {
+            // Magnetize to Right Edge
+            targetLeft = desktop.Right - this.ActualWidth - screenMargin;
+        }
+
+        // ─── VERTICAL SNAPPING MATH (Top vs Bottom Taskbar) ───
+        if (this.Top < desktop.Top + snapThreshold)
+        {
+            // Magnetize to Top Edge
+            targetTop = desktop.Top + screenMargin;
+        }
+        else if (this.Top + this.ActualHeight > desktop.Bottom - snapThreshold)
+        {
+            // Magnetize to Bottom Edge (Calculates exact height to stay cleanly above the taskbar)
+            targetTop = desktop.Bottom - this.ActualHeight - screenMargin;
+        }
+
+        // 3. Move the window to the final calculated coordinates instantly
+        this.Left = targetLeft;
+        this.Top = targetTop;
+    }
+    private void UpdatePinnedPosition()
+    {
+        this.UpdateLayout();
+
+        var desktop = SystemParameters.WorkArea;
+        double screenMargin = 15;
+
+        // MATH: If the window is currently sitting in the bottom zone of the screen,
+        // recalculate the Top anchor so the expansion pushes the window UP instead of DOWN.
+        if (this.Top > (desktop.Height / 2))
+        {
+            this.Top = desktop.Bottom - this.ActualHeight - screenMargin;
+        }
+    }
+
+
 
     // Right-click context menu to close the app (since there's no title bar)
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
@@ -103,6 +171,8 @@ public partial class MainWindow : Window
             {
                 lstTodos.Items.Add(CreateTodoRow(todo));
             }
+
+            UpdatePinnedPosition();
         }
         catch (Exception ex)
         {
@@ -123,6 +193,8 @@ public partial class MainWindow : Window
 
             // Generate UI row using the shared helper and add to ListBox
             lstTodos.Items.Add(CreateTodoRow(inputDialog.NewToDo));
+
+            UpdatePinnedPosition();
         }
     }
 
@@ -149,6 +221,8 @@ public partial class MainWindow : Window
             }
 
             lstTodos.Items.Clear();
+
+            UpdatePinnedPosition();
         }
         catch (Exception ex)
         {
@@ -169,6 +243,8 @@ public partial class MainWindow : Window
             {
                 lstTodos.Items.Add(CreateTodoRow(todo));
             }
+
+            UpdatePinnedPosition();
         }
         catch (Exception ex)
         {
