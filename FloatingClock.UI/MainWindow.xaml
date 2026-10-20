@@ -128,16 +128,24 @@
 
                 <!-- Daily Todo List Container Box -->
                 <Border Grid.Row="1" BorderBrush="Red" BorderThickness="1" CornerRadius="6" Padding="4" Background="#11FFFFFF" Margin="0,4,0,0">
-                    <!-- 🛠️ ScrollViewer goes HERE, wrapping the ListBox to capture multiple items cleanly -->
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <ListBox x:Name="lstTodos" Background="Transparent" 
-                                 BorderBrush="Transparent" Foreground="White"
-                                 HorizontalAlignment="Stretch"
-                                 HorizontalContentAlignment="Stretch">
-                            <!-- Items add sequentially here via your code-behind loop -->
+                    <!-- 1. Explicitly set HorizontalScrollBarVisibility to Disabled -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                  HorizontalScrollBarVisibility="Disabled">
+
+                        <!-- 2. Tell the ListBox to strictly stretch and bind its elements flat horizontally -->
+                        <ListBox x:Name="lstTodos" 
+                             Background="Transparent" 
+                             BorderBrush="Transparent" 
+                             Foreground="White"
+                             HorizontalAlignment="Stretch"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <!-- 🛠️ Locks sub-container overflow -->
+
                         </ListBox>
                     </ScrollViewer>
                 </Border>
+
             </Grid>
 
         </Grid>

@@ -256,17 +256,15 @@ public partial class MainWindow : Window
 
     private Grid CreateTodoRow(ToDo todo)
     {
-        // Outer structural row grid container
         var containerGrid = new Grid
         {
-            Margin = new Thickness(0, 4, 0, 4), // Breathing room between individual items
+            Margin = new Thickness(0, 4, 0, 4),
             Tag = todo.Id
         };
 
-        // Sleek, semi-transparent card background accentuating your dark mode widget theme
         var cardBackground = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)), // Subtle highlight overlay
+            Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(15, 255, 255, 255)),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
@@ -277,20 +275,22 @@ public partial class MainWindow : Window
         contentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         contentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
 
-        // Left Column Layout: Task title on top, Date sub-label underneath
         var textStack = new StackPanel { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center };
 
+        // ─── THE WRAPPING TEXTBLOCK FIX ───
         var txtTask = new TextBlock
         {
             Text = todo.Description,
             Foreground = Brushes.White,
             FontSize = 13,
             FontWeight = FontWeights.Medium,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 4)
+            TextWrapping = TextWrapping.Wrap, // 🔄 Enables text wrapping
+
+            // 📏 CRITICAL BUDGET: Restricts the horizontal layout boundary 
+            // so long tasks wrap downward instead of stretching the card box.
+            MaxWidth = 220
         };
 
-        // Format the date dynamically: highlight past due items in subtle red
         bool isPastDue = todo.DueDate < DateTime.Now;
         var date = new TextBlock
         {
@@ -305,10 +305,10 @@ public partial class MainWindow : Window
         Grid.SetColumn(textStack, 0);
         contentLayout.Children.Add(textStack);
 
-        // Right Column Layout: Reusable custom-styled circular Delete Button
+        // Delete Button
         var deleteBtn = new Button
         {
-            Content = "✕", // Swapped out flat emoji for a sleek geometric close glyph
+            Content = "✕",
             FontSize = 10,
             Foreground = new SolidColorBrush(Color.FromRgb(180, 180, 180)),
             Width = 20,
@@ -318,7 +318,6 @@ public partial class MainWindow : Window
             Cursor = System.Windows.Input.Cursors.Hand
         };
 
-        // Custom runtime template style for the delete button (circular hover highlighting)
         var btnTemplate = new ControlTemplate(typeof(Button));
         var borderFactory = new FrameworkElementFactory(typeof(Border));
         borderFactory.Name = "BtnBg";
@@ -331,10 +330,9 @@ public partial class MainWindow : Window
         borderFactory.AppendChild(btnContent);
         btnTemplate.VisualTree = borderFactory;
 
-        // Hover background behavior
         var hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
         hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), "BtnBg"));
-        hoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromRgb(239, 83, 80)))); // Pops red on hover
+        hoverTrigger.Setters.Add(new Setter(Button.ForegroundProperty, new SolidColorBrush(Color.FromRgb(239, 83, 80))));
         btnTemplate.Triggers.Add(hoverTrigger);
         deleteBtn.Template = btnTemplate;
 
@@ -345,6 +343,7 @@ public partial class MainWindow : Window
             {
                 await _todoRepository.DeleteAsync(todoId);
             }
+            UpdatePinnedPosition(); // Keeps window positioning math in sync after deleting wrapped multi-line rows
         };
 
         Grid.SetColumn(deleteBtn, 1);
@@ -355,6 +354,5 @@ public partial class MainWindow : Window
 
         return containerGrid;
     }
-
 
 }
