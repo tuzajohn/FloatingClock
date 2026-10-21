@@ -11,6 +11,7 @@
         SizeToContent="Height"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        Closed="Window_Closed"
         Icon="pack://application:,,,/Assets/app.ico">
 
     <Window.Resources>

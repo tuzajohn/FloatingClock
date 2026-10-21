@@ -22,7 +22,10 @@ namespace FloatingClock.UI;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private CancellationTokenSource _timerCts = new CancellationTokenSource();
     private readonly IRepository<ToDo> _todoRepository;
+
+    private const int WaitingPeriodInSeconds = 600; // 10 minutes
 
     public MainWindow(IRepository<ToDo> todoRepository)
     {
@@ -45,8 +48,14 @@ public partial class MainWindow : Window
         };
 
         this.Loaded += MainWindow_Loaded;
+
     }
 
+    private void Window_Closed(object sender, EventArgs e)
+    {
+        _timerCts.Cancel();
+        _timerCts.Dispose();
+    }
 
     private DispatcherTimer timer;
     private string TimeFormat { get; set; }
@@ -173,6 +182,7 @@ public partial class MainWindow : Window
             }
 
             UpdatePinnedPosition();
+            StartPeriodicRefresh();
         }
         catch (Exception ex)
         {
@@ -252,7 +262,76 @@ public partial class MainWindow : Window
         }
     }
 
+    private void StartPeriodicRefresh()
+    {
+        _ = RunRefreshLoopAsync(_timerCts.Token);
+    }
 
+    private async Task RunRefreshLoopAsync(CancellationToken cancellationToken)
+    {
+        await Task.Run(async () => await CleanExpiredTodosAsync(), cancellationToken);
+
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                DateTime now = DateTime.Now;
+                int currentSecond = now.Minute * 60 + now.Second;
+
+                int secondsUntilNextTick = WaitingPeriodInSeconds - (currentSecond % WaitingPeriodInSeconds);
+
+                DateTime nextTickTime = now.AddSeconds(secondsUntilNextTick)
+                                           .AddMilliseconds(-now.Millisecond);
+
+                TimeSpan delay = nextTickTime - DateTime.Now;
+
+                await Task.Delay(delay, cancellationToken);
+                await CleanExpiredTodosAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timer was stopped gracefully
+        }
+    }
+
+    private async Task CleanExpiredTodosAsync()
+    {
+        List<Guid> allTodoIds = [];
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            allTodoIds = lstTodos.Items.Cast<Grid>()
+                .Select(row => row.Tag)
+                .OfType<Guid>()
+                .ToList();
+        });
+
+        List<Guid> expiredIds = [];
+        foreach (var id in allTodoIds)
+        {
+            var todo = await _todoRepository.GetByIdAsync(id);
+            if (todo != null && todo.DueDate < DateTime.Now)
+            {
+                expiredIds.Add(id);
+            }
+        }
+
+        if (expiredIds.Count > 0)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
+                var rowsToRemove = lstTodos.Items.Cast<Grid>()
+                    .Where(row => row.Tag is Guid id && expiredIds.Contains(id))
+                    .ToList();
+
+                foreach (var row in rowsToRemove)
+                {
+                    await _todoRepository.DeleteAsync((Guid)row.Tag);
+                    lstTodos.Items.Remove(row);
+                }
+            });
+        }
+    }
 
     private Grid CreateTodoRow(ToDo todo)
     {
